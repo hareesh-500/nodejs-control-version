@@ -26,16 +26,16 @@ router.post("/insert/user", controller.insertData);
 // inserting data into category collection
 router.post(
   "/insert/category",
-  verfyAuth,
   categoryUpload,
+  verfyAuth,
   controller.insertCategoryData
 );
 
 // inserting data into product collection
 router.post(
   "/insert/product",
-  verfyAuth,
   productUpload,
+  verfyAuth,
   controller.insertProductData
 );
 

@@ -6,6 +6,7 @@ const upload = require("../../DB/uploadFile");
 require("dotenv/config");
 const { ObjectID } = require("mongodb");
 const bcrypt = require("bcrypt");
+const msg91Controller = require("../MSG91Controller/sendOtp");
 
 //inserting user data
 exports.insertData = async (req, res) => {
@@ -34,6 +35,7 @@ exports.insertData = async (req, res) => {
 
 //inserting category data
 exports.insertCategoryData = async (req, res) => {
+  console.log(req.file);
   const uploadResponse = await upload(req.file.path);
   let imageData = JSON.parse(uploadResponse);
   console.log(imageData.extras.ImageID);
@@ -74,9 +76,10 @@ exports.insertProductData = async (req, res) => {
 
 //getting users data
 exports.getUsers = async (req, res) => {
-  var limit = parseInt(req.query.limit);
+  var limit = parseInt(req.body.limit);
   console.log(typeof limit);
   User.find()
+    .skip(req.body.skip)
     .limit(limit)
     .then((users) => {
       res.send(users);
@@ -86,13 +89,14 @@ exports.getUsers = async (req, res) => {
 //getting category data
 exports.getCategory = async (req, res) => {
   var limit = 10;
-  if (req.query.limit) limit = parseInt(req.query.limit);
+  if (req.query.limit) limit = parseInt(req.body.limit);
   console.log(typeof limit);
   category
     .find()
+    .skip(req.body.limit)
     .limit(limit)
     .then((categories) => {
-      res.send(categories);
+      res.send({ categories: categories, total_count: categories.length });
     });
 };
 
@@ -111,10 +115,12 @@ exports.getProduct = async (req, res) => {
 
 // deleting users data
 exports.deleteUsers = async (req, res) => {
-  category.collection
-    .deleteMany(req.body)
+  const { id } = req.body;
+  if (!id) return res.json({ message: "For delete user you need to pass id" });
+  User.collection
+    .deleteOne({ _id: ObjectID(id) })
     .then((result) => {
-      res.send(result);
+      res.json({ message: "user deleted successfully" });
     })
     .catch((err) => {
       res.send(err);
@@ -123,10 +129,12 @@ exports.deleteUsers = async (req, res) => {
 
 //deleting category data
 exports.deleteCategory = async (req, res) => {
+  const { id } = req.body;
+  if (!id) return res.json({ message: "For delete user you need to pass id" });
   category.collection
-    .deleteMany(req.body)
+    .deleteOne({ _id: ObjectID(id) })
     .then((result) => {
-      res.send(result);
+      res.json({ message: "Category deleted successfully" });
     })
     .catch((err) => {
       res.send(err);
@@ -135,10 +143,12 @@ exports.deleteCategory = async (req, res) => {
 
 //deleting product data
 exports.deleteProduct = async (req, res) => {
+  const { id } = req.body;
+  if (!id) return res.json({ message: "For delete user you need to pass id" });
   product.collection
-    .deleteMany(req.body)
+    .deleteMany({ _id: ObjectID(id) })
     .then((result) => {
-      res.send(result);
+      res.json({ message: "Product deleted successfully" });
     })
     .catch((err) => {
       res.send(err);
@@ -160,7 +170,8 @@ exports.login = async (req, res) => {
       }
       res.header("auth-token", token).send("Your otop is " + otp);
       process.env.OTP = otp;
-      exports.otp;
+      var msg = await msg91Controller.Send_OTP(7036922724, otp);
+      console.log(msg);
     } else {
       res.send("password incorrect");
     }
@@ -180,8 +191,8 @@ exports.updateUser = async (req, res) => {
   let newvalues = { $set: { name: name } };
   console.log(query, newvalues);
   User.collection.updateOne(query, newvalues, (err, result) => {
-    if (err) return res.json({ messae: "you need to pass values to update" });
-    res.send(result);
+    if (err) return res.json({ message: "you need to pass values to update" });
+    res.json({ message: "User updaed successfully" });
   });
 };
 
@@ -207,7 +218,7 @@ exports.updateCategory = async (req, res) => {
   console.log(query, newvalues);
   category.collection.updateOne(query, newvalues, (err, result) => {
     if (err) return res.json({ messae: "you need to pass values to update" }); //res.send(err);
-    res.send(result);
+    res.json({ message: "category updated successfully" });
   });
 };
 
